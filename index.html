@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AR Object Recognition</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+    #output {
+      margin-top: 20px;
+    }
+    #imagePreview {
+      max-width: 80%;
+      margin: 20px auto;
+      display: block;
+    }
+    #result {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>AR Object Recognition App</h1>
+  <p>Upload an image to recognize objects and see their names and descriptions.</p>
+
+  <!-- File input for image upload -->
+  <input type="file" id="imageUpload" accept="image/*">
+  
+  <!-- Image preview -->
+  <img id="imagePreview" src="" alt="Image Preview" style="display:none;">
+  
+  <div id="output">
+    <h2>Object Recognition Results:</h2>
+    <div id="result"></div>
+  </div>
+
+  <!-- Include TensorFlow.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+
+  <script>
+    let model;
+
+    // Load the pre-trained COCO-SSD model
+    async function loadModel() {
+      model = await cocoSsd.load();
+      console.log("Model loaded");
+    }
+
+    // Handle image upload
+    document.getElementById("imageUpload").addEventListener("change", function(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = new Image();
+          img.src = e.target.result;
+          img.onload = function() {
+            document.getElementById("imagePreview").src = img.src;
+            document.getElementById("imagePreview").style.display = "block";
+            recognizeObject(img);
+          };
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Recognize object in uploaded image
+    async function recognizeObject(img) {
+      // Use the model to predict the objects in the image
+      const predictions = await model.detect(img);
+      
+      // Display results
+      const resultContainer = document.getElementById("result");
+      resultContainer.innerHTML = ''; // Clear previous results
+
+      if (predictions.length > 0) {
+        predictions.forEach(prediction => {
+          const div = document.createElement("div");
+          div.innerHTML = `<strong>${prediction.class}</strong>: ${Math.round(prediction.score * 100)}% confidence`;
+          resultContainer.appendChild(div);
+        });
+      } else {
+        resultContainer.innerHTML = "No objects detected!";
+      }
+    }
+
+    // Load the model on page load
+    loadModel();
+  </script>
+
+</body>
+</html>
